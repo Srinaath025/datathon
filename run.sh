@@ -12,20 +12,15 @@ echo "  KSP Datathon 2026 - Challenge 02"
 echo "============================================================"
 echo ""
 
-# Check Python
-if ! command -v python3 &> /dev/null; then
-  echo "[ERROR] Python3 not found. Please install Python 3.10+"
-  exit 1
-fi
+# Check Python (Removed for Catalyst AppSail compatibility)
 
-# Install dependencies
-echo "[1/3] Installing Python dependencies..."
-pip install -r requirements.txt -q
+# Install dependencies (Handled by Catalyst build phase automatically)
+echo "[1/3] Dependencies handled by Catalyst..."
 
 # Generate data if not exists
 if [ ! -f "data/crime_db.sqlite" ]; then
   echo "[2/3] Generating synthetic Karnataka crime dataset..."
-  python3 generate_data.py
+  python generate_data.py
 else
   echo "[2/3] Dataset already exists. Skipping generation."
 fi
@@ -34,7 +29,7 @@ fi
 if [ -f ".env" ]; then
   set -a
   # shellcheck disable=SC1091
-  source .env
+  . ./.env
   set +a
   echo "[ENV] Loaded environment from .env"
 else
@@ -58,4 +53,5 @@ elif command -v open &> /dev/null; then
   sleep 2 && open http://localhost:8000 &
 fi
 
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+PORT=${X_ZOHO_CATALYST_LISTEN_PORT:-9000}
+python -m uvicorn main:app --host 0.0.0.0 --port $PORT
