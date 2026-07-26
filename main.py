@@ -67,6 +67,7 @@ app = FastAPI(
     title="KSP CrimeIQ API",
     description="AI-Driven Crime Analytics Platform",
     version="2.0.0",
+    root_path="/server/crimesq"
 )
 
 # Restricted CORS origins
@@ -555,3 +556,9 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect(websocket)
+
+if __name__ == "__main__":
+    import uvicorn
+    # Catalyst provides the port via this environment variable
+    port = int(os.environ.get("X_ZOHO_CATALYST_LISTEN_PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
