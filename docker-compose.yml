@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  crimeiq-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ksp_crimeiq_api
+    ports:
+      - "8000:8000"
+    environment:
+      - KSP_SECRET=${KSP_SECRET:-ksp-crimeiq-super-secret-key-production-generated-001}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+      - INVESTIGATOR_PASSWORD=${INVESTIGATOR_PASSWORD:-}
+      - ANALYST_PASSWORD=${ANALYST_PASSWORD:-}
+      - SHO_PASSWORD=${SHO_PASSWORD:-}
+    volumes:
+      - crimeiq_data:/app/data
+      - crimeiq_models:/app/analytics/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  crimeiq_data:
+    driver: local
+  crimeiq_models:
+    driver: local

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KSP CrimeIQ — Login</title>
+  <meta name="description" content="Secure login to Karnataka State Police AI Crime Analytics Platform">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base:      #070d1a;
+      --bg-surface:   #0d1526;
+      --bg-card:      #121e36;
+      --border:       rgba(56,120,255,0.18);
+      --border-bright:rgba(56,120,255,0.45);
+      --blue:         #3b82f6;
+      --blue-glow:    rgba(59,130,246,0.25);
+      --purple:       #8b5cf6;
+      --cyan:         #06b6d4;
+      --green:        #10b981;
+      --red:          #ef4444;
+      --amber:        #f59e0b;
+      --text-primary: #f0f6ff;
+      --text-muted:   #4a6490;
+      --text-sec:     #8ba3cc;
+      --font-mono:    'JetBrains Mono', monospace;
+      --transition:   0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      animation: gridShift 20s linear infinite;
+    }
+    @keyframes gridShift {
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 40px 40px, 40px 40px; }
+    }
+
+    /* Glow orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      animation: float 8s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 400px; height: 400px;
+      background: rgba(59,130,246,0.12);
+      top: -100px; left: -100px;
+      animation-delay: 0s;
+    }
+    .orb-2 {
+      width: 300px; height: 300px;
+      background: rgba(139,92,246,0.10);
+      bottom: -80px; right: -80px;
+      animation-delay: -4s;
+    }
+    .orb-3 {
+      width: 200px; height: 200px;
+      background: rgba(6,182,212,0.08);
+      top: 50%; right: 20%;
+      animation-delay: -2s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50%       { transform: translateY(-20px) scale(1.05); }
+    }
+
+    /* Layout */
+    .login-wrapper {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* LEFT PANEL — branding */
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 64px;
+      background: linear-gradient(135deg, rgba(13,21,38,0.98) 0%, rgba(7,13,26,0.95) 100%);
+      border-right: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .left-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: linear-gradient(180deg, transparent, var(--blue), var(--purple), transparent);
+    }
+
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 48px;
+    }
+    .brand-emblem {
+      width: 52px; height: 52px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      box-shadow: 0 0 32px rgba(59,130,246,0.35);
+    }
+    .brand-text-main {
+      font-size: 22px; font-weight: 800; letter-spacing: -0.02em;
+    }
+    .brand-text-sub {
+      font-size: 11px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 18px;
+      background: linear-gradient(135deg, #f0f6ff 0%, var(--blue) 60%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: 14px;
+      color: var(--text-sec);
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 380px;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-sec);
+    }
+    .feature-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .datathon-badge {
+      margin-top: 48px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.25);
+      border-radius: 20px;
+      font-size: 11px;
+      color: var(--text-sec);
+      letter-spacing: 0.04em;
+    }
+    .datathon-badge strong { color: var(--blue); }
+
+    /* RIGHT PANEL — login form */
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 48px;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .login-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .login-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .login-header p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* Role quick-select */
+    .role-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+    .role-tab {
+      width: calc(50% - 4px);
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg-card);
+      cursor: pointer;
+      transition: all var(--transition);
+      text-align: center;
+    }
+    .role-tab:hover {
+      border-color: var(--border-bright);
+      background: rgba(59,130,246,0.06);
+    }
+    .role-tab.active {
+      border-color: var(--blue);
+      background: rgba(59,130,246,0.12);
+      box-shadow: 0 0 14px rgba(59,130,246,0.2);
+    }
+    .role-tab-icon { font-size: 18px; margin-bottom: 4px; }
+    .role-tab-name { font-size: 11px; font-weight: 600; color: var(--text-primary); }
+    .role-tab-creds { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; }
+
+    /* Form fields */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .form-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--text-primary);
+      outline: none;
+      transition: all var(--transition);
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .form-input.error { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,0.12); }
+
+    .password-wrap { position: relative; }
+    .password-toggle {
+      position: absolute;
+      right: 14px; top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 16px;
+      user-select: none;
+      transition: color var(--transition);
+    }
+    .password-toggle:hover { color: var(--text-primary); }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      padding: 10px 14px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #fca5a5;
+      margin-bottom: 16px;
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60%  { transform: translateX(-6px); }
+      40%, 80%  { transform: translateX(6px); }
+    }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+      transition: all var(--transition);
+      font-family: inherit;
+      letter-spacing: 0.02em;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-login::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1));
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+    .btn-login:hover { transform: translateY(-1px); box-shadow: 0 8px 28px rgba(59,130,246,0.4); }
+    .btn-login:hover::after { opacity: 1; }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-login .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Security notice */
+    .security-notice {
+      margin-top: 24px;
+      padding: 12px 14px;
+      background: rgba(16,185,129,0.07);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.6;
+    }
+    .security-notice span { color: var(--green); }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .login-wrapper { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="login-wrapper">
+
+  <!-- ── LEFT PANEL — Branding ── -->
+  <div class="left-panel">
+    <div class="brand-logo">
+      <div class="brand-emblem">KSP</div>
+      <div>
+        <div class="brand-text-main">KSP CrimeIQ</div>
+        <div class="brand-text-sub">Karnataka State Police</div>
+      </div>
+    </div>
+
+    <h2 class="hero-title">AI-Driven Crime<br>Analytics Platform</h2>
+    <p class="hero-desc">
+      Unified intelligence dashboard for crime hotspot detection, criminal network mapping,
+      predictive risk scoring, and socio-economic analysis across 31 Karnataka districts.
+    </p>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#3b82f6"></div>
+        Geospatial heatmaps & real-time crime density
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#8b5cf6"></div>
+        Criminal network graph — persons, vehicles, phones
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#f59e0b"></div>
+        Holt-Winters 6-month crime trend forecasting
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#10b981"></div>
+        Explainable AI risk scoring — auditable formula
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#ef4444"></div>
+        Isolation Forest anomaly detection on 1,200+ FIRs
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot" style="background:#06b6d4"></div>
+        TF-IDF semantic FIR search & similar case finder
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT PANEL — Login Form ── -->
+  <div class="right-panel">
+    <div class="login-card">
+
+      <div class="login-header">
+        <h1 id="form-title">Secure Access</h1>
+        <p id="form-subtitle">Sign in with your KSP credentials</p>
+      </div>
+
+      <div style="background: rgba(220,38,38,0.15); border: 1px solid rgba(239,68,68,0.4); color: #fca5a5; padding: 8px 12px; font-size: 11px; font-weight: 600; text-align: center; border-radius: 6px; margin-bottom: 16px;">
+        ⚠️ DEMONSTRATION PROTOTYPE: Synthetic demonstration data — not derived from real case records.
+      </div>
+
+
+      <!-- Quick role selector -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px">
+        Quick Fill — Demo Accounts
+      </div>
+      <div class="role-tabs" id="role-tabs">
+        <div class="role-tab active" onclick="fillCreds('admin','admin123',this)">
+          <div class="role-tab-name">Commander</div>
+          <div class="role-tab-creds">admin / admin123</div>
+        </div>
+        <div class="role-tab" onclick="fillCreds('investigator','inv123',this)">
+          <div class="role-tab-name">Investigator</div>
+          <div class="role-tab-creds">investigator / inv123</div>
+        </div>
+
+        <div class="role-tab" onclick="fillCreds('sho','sho123',this)">
+          <div class="role-tab-name">SHO</div>
+          <div class="role-tab-creds">sho / sho123</div>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div class="error-msg" id="error-msg" role="alert"></div>
+
+      <!-- Form -->
+      <form id="auth-form" onsubmit="handleAuth(event)" novalidate>
+        <div id="signup-fields" style="display:none">
+          <div class="form-group">
+            <label class="form-label" for="display_name">Full Name</label>
+            <input type="text" id="display_name" class="form-input" placeholder="Enter your full name">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="badge">Badge Number</label>
+            <input type="text" id="badge" class="form-input" placeholder="e.g. KSP/123">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="role">Role</label>
+            <select id="role" class="form-input">
+              <option value="investigator">Investigator</option>
+              <option value="sho">Station House Officer</option>
+              <option value="commander">District Commander</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input type="text" id="username" class="form-input" placeholder="Enter username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="password" class="form-input" placeholder="Enter password" required>
+            <span class="password-toggle" id="pwd-toggle" onclick="togglePassword()">👁</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="login-btn">
+          <span id="btn-text">Sign In to KSP CrimeIQ</span>
+          <div class="spinner" id="btn-spinner"></div>
+        </button>
+        
+        <div style="text-align:center;margin-top:16px;font-size:12px;color:var(--text-sec)">
+          <span id="toggle-text">Don't have an account?</span> 
+          <a href="#" onclick="toggleMode(event)" style="color:var(--blue);text-decoration:none;font-weight:600" id="toggle-link">Sign Up</a>
+        </div>
+      </form>
+
+      <div class="security-notice">
+        <span>🔒</span> All sessions are JWT-authenticated (8h expiry).
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let isSignup = false;
+  let demoUserMap = {};
+
+  async function loadDemoUsers() {
+    try {
+      const r = await fetch('/auth/users');
+      if (!r.ok) return;
+      const users = await r.json();
+      const container = document.getElementById('role-tabs');
+      if (!container || !users.length) return;
+      container.innerHTML = '';
+      users.forEach((u, i) => {
+        demoUserMap[u.username] = u.password || '';
+        const div = document.createElement('div');
+        div.className = 'role-tab' + (i === 0 ? ' active' : '');
+        div.onclick = function() { fillCreds(u.username, u.password || '', this); };
+        div.innerHTML = `
+          <div class="role-tab-name">${u.role_label}</div>
+          <div class="role-tab-creds">${u.username} / ${u.password ? u.password : '••••••'}</div>
+        `;
+        container.appendChild(div);
+        if (i === 0 && !document.getElementById('username').value) {
+          document.getElementById('username').value = u.username;
+          document.getElementById('password').value = u.password || '';
+        }
+      });
+    } catch(e) {}
+  }
+  loadDemoUsers();
+
+  function toggleMode(e) {
+    e.preventDefault();
+    isSignup = !isSignup;
+    document.getElementById('signup-fields').style.display = isSignup ? 'block' : 'none';
+    document.getElementById('role-tabs').style.display = isSignup ? 'none' : 'grid';
+    document.querySelector('.login-header p').style.display = isSignup ? 'none' : 'block';
+    
+    document.getElementById('form-title').textContent = isSignup ? 'Create Account' : 'Secure Access';
+    document.getElementById('btn-text').textContent = isSignup ? 'Sign Up' : 'Sign In to KSP CrimeIQ';
+    document.getElementById('toggle-text').textContent = isSignup ? 'Already have an account?' : "Don't have an account?";
+    document.getElementById('toggle-link').textContent = isSignup ? 'Sign In' : 'Sign Up';
+    
+    if (isSignup) {
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    } else {
+      const firstTab = document.querySelector('.role-tab');
+      if (firstTab) firstTab.click();
+    }
+    clearError();
+  }
+
+  // ── Pre-fill credentials from role tabs ──────────────────
+  function fillCreds(user, pass, el) {
+    document.getElementById('username').value = user;
+    document.getElementById('password').value = pass;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    clearError();
+  }
+
+
+  // ── Toggle password visibility ────────────────────────────
+  function togglePassword() {
+    const pwd = document.getElementById('password');
+    const toggle = document.getElementById('pwd-toggle');
+    if (pwd.type === 'password') {
+      pwd.type = 'text'; toggle.textContent = '🙈';
+    } else {
+      pwd.type = 'password'; toggle.textContent = '👁';
+    }
+  }
+
+  // ── Show / clear error ────────────────────────────────────
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    document.getElementById('username').classList.add('error');
+    document.getElementById('password').classList.add('error');
+    // Re-trigger animation
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = '';
+  }
+  function clearError() {
+    const el = document.getElementById('error-msg');
+    el.style.display = 'none';
+    document.getElementById('username').classList.remove('error');
+    document.getElementById('password').classList.remove('error');
+  }
+
+  // ── Handle auth submit ───────────────────────────────────
+  async function handleAuth(e) {
+    e.preventDefault();
+    clearError();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!username || !password) { showError('Please enter username and password.'); return; }
+    
+    let payload = { username, password };
+    let endpoint = '/auth/login';
+
+    if (isSignup) {
+      const display_name = document.getElementById('display_name').value.trim();
+      const badge = document.getElementById('badge').value.trim();
+      const role = document.getElementById('role').value;
+      if (!display_name || !badge) { showError('Please fill all fields.'); return; }
+      payload = { username, password, display_name, badge, role };
+      endpoint = '/auth/signup';
+    }
+
+    const btn  = document.getElementById('login-btn');
+    const txt  = document.getElementById('btn-text');
+    const spin = document.getElementById('btn-spinner');
+
+    btn.disabled = true;
+    txt.style.display = 'none';
+    spin.style.display = 'block';
+
+    try {
+      const res = await fetch(endpoint, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        showError(err.detail || 'Authentication failed.');
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem('ksp_token', data.access_token);
+      localStorage.setItem('ksp_user', JSON.stringify(data.user));
+
+      // Success animation then redirect
+      btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+      txt.textContent = '✓ Authenticated!';
+      txt.style.display = 'block';
+      spin.style.display = 'none';
+
+      setTimeout(() => { window.location.href = '/'; }, 700);
+
+    } catch (err) {
+      showError('Network error. Is the server running?');
+    } finally {
+      btn.disabled = false;
+      spin.style.display = 'none';
+      txt.style.display = 'block';
+    }
+  }
+
+  // ── Redirect if already logged in ────────────────────────
+  const existingToken = localStorage.getItem('ksp_token');
+  if (existingToken) {
+    // Verify token is still valid
+    fetch('/auth/me', { headers: { Authorization: `Bearer ${existingToken}` } })
+      .then(r => { if (r.ok) window.location.href = '/'; })
+      .catch(() => {});
+  }
+
+  // Clear form errors on typing
+  ['username', 'password'].forEach(id => {
+    document.getElementById(id).addEventListener('input', clearError);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KSP CrimeIQ — AI-Driven Crime Analytics Platform</title>
+  <meta name="description" content="Karnataka State Police AI-powered crime analytics platform for crime hotspot detection, criminal network analysis, predictive risk scoring, and socio-economic correlation.">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Design System -->
+  <link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+<body>
+
+<!-- ══════════════════ PERSISTENT DEMO DISCLAIMER BANNER ══════════════════ -->
+<div id="persistent-synthetic-disclaimer">
+  <span style="font-size: 13px;">⚠️</span>
+  <span>DEMONSTRATION PROTOTYPE: Synthetic demonstration data — not derived from real case records.</span>
+</div>
+
+<div id="app">
+
+  <!-- ══════════════════ TOP BAR ══════════════════ -->
+
+
+  <header id="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">🛡️</div>
+      <div>
+        <div class="brand-name">KSP CrimeIQ</div>
+        <div class="brand-sub">Karnataka State Police · Analytics Platform</div>
+      </div>
+    </div>
+
+    <div class="topbar-center" style="position:relative">
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="global-search" placeholder="Search FIRs — e.g. 'knife robbery Mysuru night'" autocomplete="off">
+      </div>
+      <div id="search-results-dropdown"></div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="theme-btn" style="display:none; margin-right:12px; font-size:16px;">🌙</button>
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE DEMO
+      </div>
+      <div id="topbar-user-info" style="display:flex;align-items:center">
+        <!-- filled by app.js renderUserTopbar() -->
+      </div>
+      <div class="role-selector" style="display:flex; align-items:center; gap:8px;">
+        👤 <span id="role-display" style="font-weight: 600;"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════ SIDEBAR ══════════════════ -->
+  <nav id="sidebar">
+    <div class="sidebar-section-label">Overview</div>
+    <div class="nav-item active" data-tab="overview" data-role-req="commander,analyst,sho,investigator">
+      <span class="nav-icon">📊</span> Overview
+    </div>
+
+    <div class="sidebar-section-label">Intelligence</div>
+    <div class="nav-item" data-tab="geo" data-role-req="commander,analyst,sho">
+      <span class="nav-icon">🗺️</span> Geospatial Intelligence
+    </div>
+    <div class="nav-item" data-tab="network" data-role-req="commander,analyst,investigator">
+      <span class="nav-icon">🕸️</span> Criminal Network
+    </div>
+    <div class="nav-item" data-tab="predictive" data-role-req="commander,analyst,sho">
+      <span class="nav-icon">📈</span> Predictive Risk
+    </div>
+    <div class="nav-item" data-tab="socio" data-role-req="commander,analyst">
+      <span class="nav-icon">🏙️</span> Socio-Economic
+    </div>
+
+    <div class="sidebar-section-label" data-role-req="commander,analyst,sho">Advanced Ops</div>
+    <div class="nav-item" data-tab="advanced" data-role-req="commander,analyst,sho">
+      <span class="nav-icon">🛡️</span> Advanced Operations
+    </div>
+
+    <div class="sidebar-section-label" data-role-req="commander,analyst,sho,investigator">Tools</div>
+    <div class="nav-item" data-tab="search" data-role-req="commander,analyst,sho,investigator">
+      <span class="nav-icon">🔎</span> FIR Search
+    </div>
+    <div class="nav-item" data-tab="timeline" data-role-req="commander,analyst,sho,investigator">
+      <span class="nav-icon">📋</span> Case Timeline
+    </div>
+    <div class="nav-item" data-tab="datamgr" data-role-req="commander,analyst">
+      <span class="nav-icon">📂</span> Data Manager
+    </div>
+    <div class="nav-item" data-tab="chatbot" data-role-req="commander,analyst,sho,investigator">
+      <span class="nav-icon">💬</span> Retrieval Assistant
+    </div>
+
+
+    <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border);">
+      <div style="font-size:10px; color:var(--text-muted); padding:0 10px; line-height:1.6">
+        <strong>KSP CrimeIQ Platform</strong><br>
+        Version 2.0.0
+      </div>
+    </div>
+  </nav>
+
+  <!-- ══════════════════ MAIN ══════════════════ -->
+  <main id="main">
+
+    <!-- ── OVERVIEW TAB ────────────────────────────── -->
+    <div class="tab-panel active" id="tab-overview">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Command Center</div>
+          <div class="page-subtitle" id="overview-role-subtitle">Welcome, District Commander — Karnataka State Police Analytics</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="exportData('csv')">📄 Export CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="exportData('pdf')">📑 Export PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadOverview()">⟳ Refresh</button>
+        </div>
+      </div>
+      
+      <!-- Toast Container for Real-time Alerts -->
+      <div id="toast-container" style="position:fixed; bottom:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px;"></div>
+
+      <!-- Spike Alerts -->
+      <div id="spike-alerts-container"></div>
+
+      <!-- Stats Row -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-icon blue">📁</div><div><div class="stat-value" id="stat-firs">—</div><div class="stat-label">Total FIRs</div></div></div>
+        <div class="stat-card"><div class="stat-icon red">⚠️</div><div><div class="stat-value" id="stat-pending">—</div><div class="stat-label">Pending Investigations</div><div class="stat-trend up">↑ Active cases</div></div></div>
+        <div class="stat-card"><div class="stat-icon amber">🎯</div><div><div class="stat-value" id="stat-offenders">—</div><div class="stat-label">Repeat Offenders</div></div></div>
+        <div class="stat-card"><div class="stat-icon green">🏛️</div><div><div class="stat-value" id="stat-districts">—</div><div class="stat-label">Districts Monitored</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Crime Type Distribution -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📊</span> Crime Type Distribution</div>
+          </div>
+          <div class="chart-container" style="height:260px">
+            <canvas id="crimeTypeChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Crime by Hour -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🕐</span> Crime by Hour of Day</div>
+          </div>
+          <div class="chart-container" style="height:260px">
+            <canvas id="crimeHourChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Top Districts by Crime -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🔴</span> Top Crime Districts</div>
+          </div>
+          <div id="top-districts-list" class="scroll-list"></div>
+        </div>
+
+        <!-- Crime by Weekday -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📅</span> Crime by Day of Week</div>
+          </div>
+          <div class="chart-container" style="height:220px">
+            <canvas id="crimeWeekdayChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GEO TAB ──────────────────────────────────── -->
+    <div class="tab-panel" id="tab-geo">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Geospatial Intelligence</div>
+          <div class="page-subtitle">Crime density heatmaps, hotspot detection, district drill-downs</div>
+        </div>
+        <div class="page-actions">
+          <select class="filter-select" id="geo-district-filter">
+            <option value="">All Districts</option>
+          </select>
+          <select class="filter-select" id="geo-crime-filter">
+            <option value="">All Crime Types</option>
+            <option>Theft</option><option>Assault</option><option>Robbery</option>
+            <option>Cybercrime</option><option>Murder</option><option>Drugs</option>
+            <option>Property Crime</option><option>Economic Crime</option>
+            <option>Sexual Offence</option><option>Abduction</option>
+          </select>
+          <select class="filter-select" id="geo-time-filter">
+            <option value="">All Times</option>
+            <option value="day">Day (06:00–20:00)</option>
+            <option value="night">Night (20:00–06:00)</option>
+            <option value="weekend">Weekends</option>
+            <option value="weekday">Weekdays</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="applyGeoFilters()">Apply Filters</button>
+        </div>
+      </div>
+
+      <!-- Spike alerts -->
+      <div id="geo-alerts"></div>
+
+      <div class="card" style="padding:12px">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🗺️</span> Crime Density Heatmap</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:11px;color:var(--text-muted)">
+            <span>🔴 High</span><span>🟡 Medium</span><span>🟢 Low</span>
+          </div>
+        </div>
+        <div id="heatmap-container">
+          <div id="heatmap"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📍</span> District Crime Density</div>
+          </div>
+          <div class="chart-container" style="height:280px">
+            <canvas id="districtBarChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🏢</span> Station Breakdown</div>
+            <select class="filter-select" id="station-district-select" onchange="loadStationBreakdown()">
+              <option value="">Select District</option>
+            </select>
+          </div>
+          <div id="station-breakdown-content" class="scroll-list" style="max-height:280px"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NETWORK TAB ──────────────────────────────── -->
+    <div class="tab-panel" id="tab-network">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Criminal Network Intelligence</div>
+          <div class="page-subtitle">Entity relationship graphs, repeat-offender tracking, MO patterns</div>
+        </div>
+      </div>
+
+      <div class="grid-1-2">
+        <!-- Offender List -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🎯</span> Repeat Offenders</div>
+            <span class="tag tag-red" id="offender-count-tag">—</span>
+          </div>
+          <div id="offender-list" class="scroll-list" style="max-height:460px"></div>
+        </div>
+
+        <!-- Network Graph -->
+        <div class="card" style="padding:12px">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🕸️</span> Network Graph</div>
+            <div class="legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Suspect</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Victim</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Vehicle</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Phone</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div>Witness</div>
+            </div>
+          </div>
+          <div id="network-svg-container">
+            <div class="loader-wrap" id="network-loader"><div class="spinner"></div> Select an offender to render graph</div>
+            <svg id="network-svg" width="100%" height="100%"></svg>
+          </div>
+          <div id="selected-offender-card" style="margin-top:12px; display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PREDICTIVE TAB ────────────────────────────── -->
+    <div class="tab-panel" id="tab-predictive">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Predictive Analytics</div>
+          <div class="page-subtitle">Crime trend forecasting, anomaly detection, explainable risk scoring</div>
+        </div>
+      </div>
+
+      <!-- Forecast -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📈</span> Crime Trend Forecast</div>
+          <div class="filter-bar">
+            <select class="filter-select" id="forecast-district">
+              <option value="">All Karnataka</option>
+            </select>
+            <select class="filter-select" id="forecast-crime-type">
+              <option value="">All Crime Types</option>
+              <option>Theft</option><option>Assault</option><option>Robbery</option>
+              <option>Cybercrime</option><option>Murder</option><option>Drugs</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="loadForecast()">Generate Forecast</button>
+          </div>
+        </div>
+        <div class="chart-container" style="height:300px">
+          <canvas id="forecastChart"></canvas>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
+          📊 Historical data (blue) · 🔮 6-month AI forecast (orange dashed) using Holt-Winters Exponential Smoothing
+        </div>
+      </div>
+
+      <!-- Model Diagnostics & Validation Panel -->
+      <div id="model-diagnostics-panel" style="background:var(--bg-surface); border:1px solid var(--border-bright); border-radius:8px; padding:12px 16px; margin-bottom:20px; font-size:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div style="font-weight:700; color:var(--cyan); display:flex; align-items:center; gap:6px;">
+            <span>🔬</span> Model Validation & Diagnostics (Holdout & Sensitivity Checks)
+          </div>
+          <span style="font-size:10px; background:rgba(6,182,212,0.15); color:var(--cyan); padding:2px 8px; border-radius:4px; font-weight:600;">Auditable Metrics</span>
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px;">
+          <div id="forecast-diagnostics-card" style="background:var(--bg-card); padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Holt-Winters Holdout Accuracy</div>
+            <div id="forecast-diagnostics-body" style="color:var(--text-sec); font-size:11px;">Loading diagnostics...</div>
+          </div>
+          <div id="anomaly-diagnostics-card" style="background:var(--bg-card); padding:10px; border-radius:6px; border:1px solid var(--border);">
+            <div style="font-weight:600; color:var(--text-primary); margin-bottom:4px;">Isolation Forest Sensitivity Analysis</div>
+            <div id="anomaly-diagnostics-body" style="color:var(--text-sec); font-size:11px;">Loading diagnostics...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+
+        <!-- Anomalies -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">⚡</span> Anomaly Detection</div>
+            <span class="tag tag-red" id="anomaly-count-tag">Loading...</span>
+          </div>
+          <div id="anomaly-list" class="scroll-list" style="max-height:340px"></div>
+        </div>
+
+        <!-- MO Clusters -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🎯</span> MO Cluster Analysis</div>
+            <span class="tag tag-blue">K-Means</span>
+          </div>
+          <div id="mo-cluster-list" class="scroll-list" style="max-height:340px"></div>
+        </div>
+      </div>
+
+      <!-- Risk Scores -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🛡️</span> District Risk Scores — Explainable AI</div>
+          <div class="formula-box" style="font-size:10px; padding:5px 10px">
+            Score = 0.30×Crime Vol + 0.35×Violent + 0.20×Trend + 0.15×Repeat Offenders
+          </div>
+        </div>
+        <div style="background: rgba(220,38,38,0.15); border-left: 4px solid #ef4444; color: #fca5a5; padding: 10px 14px; font-size: 12px; font-weight: 600; margin-bottom: 14px; border-radius: 4px;">
+          ⚠️ NOTICE: Risk scores and justifications are calculated on synthetic demonstration data for hackathon evaluation only.
+        </div>
+        <div id="risk-scores-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; max-height:420px; overflow-y:auto"></div>
+
+      </div>
+    </div>
+
+    <!-- ── SOCIO-ECONOMIC TAB ─────────────────────────── -->
+    <div class="tab-panel" id="tab-socio">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Socio-Economic Intelligence</div>
+          <div class="page-subtitle">Crime-socioeconomic correlations, district ranking, station performance</div>
+        </div>
+      </div>
+
+      <!-- Correlation section -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">📐</span> Crime–Socioeconomic Correlations (Pearson r)</div>
+        </div>
+        <div id="correlation-badges" style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap"></div>
+        <div id="correlation-insights" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+        <div class="chart-container" style="height:300px">
+          <canvas id="correlationChart"></canvas>
+        </div>
+      </div>
+
+      <!-- District Ranking -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🏆</span> District Intelligence Ranking</div>
+          <div class="formula-box" style="font-size:10px; padding:5px 10px">
+            0.35×Violent + 0.25×Total + 0.20×Pending + 0.10×Repeat Offenders + 0.10×Inv. Speed
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="district-rank-table">
+            <thead>
+              <tr>
+                <th>Rank</th><th>District</th><th>Score</th>
+                <th>Total Crimes</th><th>Violent</th><th>Pending %</th>
+                <th>Avg. Inv. Days</th><th>Repeat Offenders</th>
+              </tr>
+            </thead>
+            <tbody id="district-rank-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Station Performance + Calendar -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🏢</span> Station Performance</div>
+          </div>
+          <div style="overflow-x:auto; max-height:300px">
+            <table class="data-table">
+              <thead>
+                <tr><th>Station</th><th>FIRs</th><th>Pending %</th><th>Avg Days</th></tr>
+              </thead>
+              <tbody id="station-perf-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">📅</span> Crime Volume Calendar</div>
+          </div>
+          <div class="chart-container" style="height:280px">
+            <canvas id="calendarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sankey Diagram -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="card-title-icon">🔀</span> Crime Flow — Type → District → Status</div>
+        </div>
+        <div id="sankey-container" style="height:350px"></div>
+      </div>
+    </div>
+
+    <!-- ── SEARCH TAB ────────────────────────────────── -->
+    <div class="tab-panel" id="tab-search">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Intelligent FIR Search</div>
+          <div class="page-subtitle">TF-IDF semantic search across all crime records</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="filter-bar" style="margin-bottom:14px">
+          <input type="text" id="search-input" class="filter-select" placeholder="Search: 'knife robbery night Mysuru'" style="flex:1; padding:8px 12px; font-size:13px">
+          <button class="btn btn-primary" onclick="performSearch()">🔍 Search</button>
+        </div>
+        <div id="search-results-table"></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card" id="similar-cases-card" style="display:none">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">🔗</span> Similar Cases</div>
+          </div>
+          <div id="similar-cases-list" class="scroll-list"></div>
+        </div>
+
+        <div class="card" id="investigation-rec-card">
+          <div class="card-header">
+            <div class="card-title"><span class="card-title-icon">💡</span> Investigation Recommendations</div>
+          </div>
+          <div id="inv-recommendations" style="display:flex;flex-direction:column;gap:10px">
+            <div style="color:var(--text-muted);font-size:12px">Select a FIR from search results to see AI recommendations</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TIMELINE TAB ──────────────────────────────── -->
+    <div class="tab-panel" id="tab-timeline">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Investigation Timeline</div>
+          <div class="page-subtitle">Automated event timeline for any FIR</div>
+        </div>
+        <div class="page-actions">
+          <input type="number" id="timeline-fir-id" class="filter-select" placeholder="FIR ID" style="width:120px" min="1" max="1200">
+          <button class="btn btn-primary" onclick="loadTimeline()">Load Timeline</button>
+        </div>
+      </div>
+      <div id="timeline-content">
+        <div class="card">
+          <div style="color:var(--text-muted);font-size:13px;text-align:center;padding:40px">
+            Enter a FIR ID (1–1200) and click "Load Timeline" to view the investigation event chain.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DATA MANAGER TAB ─────────────────────────────── -->
+    <div class="tab-panel" id="tab-datamgr">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Data Manager</div>
+          <div class="page-subtitle">Import real crime data (CSV/Excel) or use synthetic dataset</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="loadDataStats()">⟳ Refresh Stats</button>
+        </div>
+      </div>
+
+      <!-- Data source stats -->
+      <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)" id="data-stats-cards">
+        <div class="stat-card"><div><div class="stat-value" id="ds-total">—</div><div class="stat-label">Total FIRs</div></div></div>
+        <div class="stat-card"><div><div class="stat-value" id="ds-synth">—</div><div class="stat-label">Synthetic FIRs</div></div></div>
+        <div class="stat-card"><div><div class="stat-value" id="ds-real">—</div><div class="stat-label">Real Imported FIRs</div></div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Upload Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Import Real Crime Data</div>
+            <span class="tag tag-green">CSV / Excel</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.7">
+            Upload a <strong style="color:var(--text-primary)">CSV or Excel (.xlsx)</strong> file with crime records.<br>
+            Flexible column detection — any order, optional fields auto-filled.
+          </div>
+
+          <div style="background:var(--bg-surface);border:2px dashed var(--border-bright);border-radius:12px;
+                      padding:28px;text-align:center;cursor:pointer;transition:all 0.2s"
+               id="drop-zone"
+               ondragover="event.preventDefault();this.style.borderColor='var(--blue-primary)'"
+               ondragleave="this.style.borderColor=''"
+               ondrop="handleDrop(event)">
+            <div style="font-size:13px;font-weight:600;margin-bottom:6px">Drag & Drop file here</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:14px">CSV, XLSX, XLS supported</div>
+            <label class="btn btn-primary btn-sm" style="cursor:pointer">
+              Browse File
+              <input type="file" id="csv-file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this)">
+            </label>
+          </div>
+
+          <div id="upload-status" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Column Format Guide -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Accepted Column Names</div>
+          </div>
+          <div style="font-size:11px;line-height:1.9;color:var(--text-secondary)">
+            The importer auto-detects these columns (any order, case-insensitive):
+          </div>
+          <table class="data-table" style="margin-top:10px">
+            <thead><tr><th>Field</th><th>Accepted Column Names</th><th>Required?</th></tr></thead>
+            <tbody>
+              <tr><td>District</td><td><span class="mono">district, district_name</span></td><td><span class="tag tag-red">Yes</span></td></tr>
+              <tr><td>Crime Type</td><td><span class="mono">crime_type, crime, offence</span></td><td><span class="tag tag-red">Yes</span></td></tr>
+              <tr><td>Sub Type</td><td><span class="mono">sub_type, subtype</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Date/Time</td><td><span class="mono">date_time, date, incident_date</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Latitude</td><td><span class="mono">lat, latitude</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Longitude</td><td><span class="mono">lon, lng, longitude</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Status</td><td><span class="mono">status, case_status</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Weapon</td><td><span class="mono">weapon, weapon_used</span></td><td><span class="tag tag-grey">No</span></td></tr>
+              <tr><td>Description</td><td><span class="mono">description, desc, details</span></td><td><span class="tag tag-grey">No</span></td></tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top:16px;padding:10px 12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px">
+            <div style="font-size:11px;font-weight:600;color:#fca5a5;margin-bottom:6px">Clear Real Data</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Remove all imported real FIRs and revert to synthetic-only dataset.</div>
+            <button class="btn btn-danger btn-sm" onclick="clearRealData()">Clear Real Data</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ADVANCED TAB ────────────────────────────── -->
+    <div class="tab-panel" id="tab-advanced">
+      <div class="page-header">
+        <div>
+          <h2>Advanced Operations</h2>
+          <div class="page-subtitle">Judicial funnel, AI bias auditing, trafficking analysis, and patrol optimization.</div>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="loadAdvanced()">⟳ Refresh</button>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-bottom:24px">
+        <div class="panel">
+          <div class="panel-header">Judicial Attrition Funnel</div>
+          <div id="judicial-funnel-container" style="font-size:13px; padding: 10px;">Loading...</div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">Responsible AI Bias Audit</div>
+          <div id="bias-audit-container" style="font-size:13px; padding: 10px;">Loading...</div>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 24px; margin-bottom:24px">
+        <div class="panel">
+          <div class="panel-header">Missing Persons Spatial Density Leads</div>
+          <div style="background: rgba(220,38,38,0.15); border-left: 4px solid #ef4444; color: #fca5a5; padding: 8px 12px; font-size: 11px; font-weight: 600; margin: 10px 10px 0 10px; border-radius: 4px;">
+            ⚠️ NOTICE: Spatial density clusters and corridors are generated from synthetic missing person coordinates — not active police operational intelligence.
+          </div>
+          <div id="trafficking-container" style="font-size:13px; max-height:300px; overflow-y:auto; padding: 10px;">Loading...</div>
+        </div>
+
+
+        <div class="panel">
+          <div class="panel-header">Patrol Resource Optimizer</div>
+          <div style="margin-bottom:15px; display:flex; gap:10px; align-items:center; padding:0 10px;">
+            <label style="font-size:12px; font-weight:600;">Total Patrol Units:</label>
+            <input type="number" id="patrol-units" value="50" style="width:70px; padding:6px; font-size:13px; background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:4px;">
+            <button class="btn btn-primary btn-sm" onclick="runPatrolOptimizer()">Allocate</button>
+          </div>
+          <div id="patrol-container" style="font-size:13px; max-height:250px; overflow-y:auto; padding: 10px;"></div>
+        </div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr; margin-bottom:24px">
+        <div class="panel">
+          <div class="panel-header">Citizen Sentiment & Trust Index</div>
+          <div id="sentiment-container" style="font-size:13px; max-height:400px; overflow-y:auto; padding: 10px;">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CHATBOT TAB ────────────────────────────── -->
+    <div class="tab-panel" id="tab-chatbot">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Case Retrieval Assistant</div>
+          <div class="page-subtitle">Interact with the CrimeIQ Local Vector Retrieval Engine</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex; flex-direction:column; height:calc(100vh - 160px);">
+        <div id="chat-messages" style="flex:1; padding:20px; overflow-y:auto; display:flex; flex-direction:column; gap:12px; font-size:14px;">
+          <div style="background:var(--bg-elevated); padding:12px 16px; border-radius:12px; align-self:flex-start; max-width:70%;">
+            Hello! I'm the CrimeIQ Case Retrieval Assistant. Ask me about crimes, repeat offenders, missing persons, or search for case descriptions.
+          </div>
+        </div>
+
+        <div style="padding:16px; border-top:1px solid var(--border); display:flex; gap:12px; background:var(--bg-surface);">
+          <input type="text" id="chat-input" placeholder="Type your question..." style="flex:1; padding:12px 16px; border:1px solid var(--border); border-radius:8px; background:var(--bg-card); color:var(--text-primary); font-size:14px;" onkeypress="if(event.key==='Enter') sendChatMessage()">
+          <button class="btn btn-primary" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip-custom" id="global-tooltip"></div>
+
+<!-- Scripts -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="/static/js/app.js?v=3"></script>
+<script src="/static/js/geo.js"></script>
+<script src="/static/js/network.js"></script>
+<script src="/static/js/predictive.js"></script>
+<script src="/static/js/socioeconomic.js"></script>
+
+</body>
+</html>
