@@ -67,7 +67,6 @@ app = FastAPI(
     title="KSP CrimeIQ API",
     description="AI-Driven Crime Analytics Platform",
     version="2.0.0",
-    root_path="/server/crimesq"
 )
 
 # Restricted CORS origins
