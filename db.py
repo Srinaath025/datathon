@@ -83,3 +83,38 @@ def init_db() -> None:
     finally:
         conn.close()
 
+    _load_sample_csv_data()
+
+
+def _load_sample_csv_data() -> None:
+    """Auto-import sample CSV datasets if present in root directory."""
+    sample_files = [
+        "sample_data_bangalore.csv",
+        "sample_data_cybercrimes.csv",
+        "sample_data_mysuru.csv"
+    ]
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    conn = get_db()
+    try:
+        # Check if real data already ingested
+        try:
+            cnt = conn.execute("SELECT COUNT(*) FROM firs WHERE data_source='real'").fetchone()[0]
+            if cnt > 0:
+                return
+        except sqlite3.OperationalError:
+            pass
+    finally:
+        conn.close()
+
+    try:
+        from analytics.data_import import process_upload
+        for fname in sample_files:
+            fpath = os.path.join(root_dir, fname)
+            if os.path.exists(fpath):
+                with open(fpath, "rb") as f:
+                    process_upload(f.read(), fname)
+    except Exception:
+        pass
+
+
